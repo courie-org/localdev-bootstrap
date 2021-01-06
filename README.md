@@ -58,22 +58,37 @@ curl http://localhost:9098/deliveries
 ```
 
 ### Courie Web Applications (Driver and Customer)
-Both the delivery and driver services must be running before the reactjs front-ends can run. 
 
+#### Local ENV
+Each of the reactjs applications must define a .env.local file in the root directory. You can copy the provided .env file for reference. 
+
+Open .env.local and add the Google API key. 
+
+```
+REACT_APP_DIRECTIONS_KEY=*******API KEY GOES HERE*********
+REACT_APP_DELIVERIES_HOST=localhost:9098
+REACT_APP_DRIVERS_HOST=localhost:8080
+```
+
+
+#### Javascript Deps Install
 For each of these, you will need to install the dependences via npm
 
 ```
 npm install
 ```
 
-and then issue an NPM start. To resolve the port conflict, set one of the web applications to use a different port than the default 3000
+> NOTE: Sometimes you could get an error for gyp not being installed. If this is the case, you may need to install Xcode CLI tools. 
 
+#### Starting the Web Applications
+By default, the react applications will start on port 3000. If you plan on running both reactjs apps at the same time, you will need to change the default port on one of them. 
+
+Default port of 3000:
 ```
 npm start
 ```
 
-and
-
+Change the port to 3001
 ```
 PORT=3001 npm start
 ```
