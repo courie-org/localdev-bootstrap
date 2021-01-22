@@ -29,6 +29,17 @@ The backend Quarkus services depend on Redis for persistence and Kafka for event
 docker-compose -f courie-deps-compose.yml up
 ```
 
+If you would like to run all services via `docker-compose` simply run:
+```
+docker-compose up
+```
+
+Some things to note:
+*  Remember to set the `DIRECTIONS_API_KEY` environment variable
+*  Driver Web port is `3001` and can be found at [http://localhost:3001](http://localhost:3001)
+*  Courie Web port is `3000` and can be found at [http://localhost:3000](http://localhost:3000)
+
+
 ### Driver Service
 The driver service requires an environment variable with the Google API key in order to work correctly. This can be a Run Configuration setting in your IDE or just set in your env. 
 
