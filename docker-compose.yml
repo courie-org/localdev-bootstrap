@@ -67,12 +67,13 @@ services:
       DIRECTIONS_API_KEY: ${DIRECTIONS_API_KEY}
       BOOTSTRAP_SERVERS: kafka:9092
       REDIS_SERVER: redis:6379
+      DELIVERY_SERVICE_HOST: http://delivery-service:9098
 
   web:
     image: node:13.12.0-alpine
     command: [
       "sh", "-c",
-      "npm update && npm install && node node_modules/node-sass/scripts/install.js && npm rebuild node-sass && npm start"
+      "sed -i /^REACT_APP_DIRECTIONS_KEY/s/=.*$$/=${DIRECTIONS_API_KEY}/ .env && npm update && npm install && node node_modules/node-sass/scripts/install.js && npm rebuild node-sass && npm start"
     ]
     volumes:
       - ${COURIE_WEB:-../courie-web}:/workspace:Z,delegated
@@ -86,7 +87,7 @@ services:
     image: node:13.12.0-alpine
     command: [
       "sh", "-c",
-      "npm update && npm install && node node_modules/node-sass/scripts/install.js && npm rebuild node-sass && npm start"
+      "sed -i /^REACT_APP_DIRECTIONS_KEY/s/=.*$$/=${DIRECTIONS_API_KEY}/ .env && npm update && npm install && node node_modules/node-sass/scripts/install.js && npm rebuild node-sass && npm start"
     ]
     volumes:
       - ${COURIE_DRIVER_WEB:-../courie-driver-web}:/workspace:Z,delegated
