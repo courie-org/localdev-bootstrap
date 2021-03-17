@@ -1,0 +1,98 @@
+---
+version: '3.8'
+services:
+  redis:
+    image: redis
+    ports: 
+      - "6379:6379"
+
+  zookeeper:
+    image: strimzi/kafka:0.19.0-kafka-2.5.0
+    command: [
+      "sh", "-c",
+      "bin/zookeeper-server-start.sh config/zookeeper.properties"
+    ]
+    ports:
+      - "2181:2181"
+    environment:
+      LOG_DIR: /tmp/logs
+
+  kafka:
+    image: strimzi/kafka:0.19.0-kafka-2.5.0
+    command: [
+      "sh", "-c",
+      "bin/kafka-server-start.sh config/server.properties --override listeners=$${KAFKA_LISTENERS} --override advertised.listeners=$${KAFKA_ADVERTISED_LISTENERS} --override zookeeper.connect=$${KAFKA_ZOOKEEPER_CONNECT}"
+    ]
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+    environment:
+      LOG_DIR: "/tmp/logs"
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+
+  delivery-service:
+    image: docker.io/maven:3.6.3-jdk-11
+    command: "mvn quarkus:dev -Dkafka.bootstrap.servers=kafka:9092"
+    depends_on:
+      - kafka
+      - redis
+    ports:
+      - 9098:9098 # HTTP Server Port
+      - 5005:5005 # Debug Port
+    volumes:
+      - ${DELIVER_SERVICE:-../delivery-service}:/workspace:Z,delegated
+      - ~/.m2:/root/.m2:z,delegated
+    working_dir: /workspace
+    environment:
+      BOOTSTRAP_SERVERS: kafka:9092
+      REDIS_SERVER: redis:6379
+
+  driver-service:
+    image: docker.io/maven:3.6.3-jdk-11
+    command: "mvn quarkus:dev"
+    depends_on:
+     - kafka
+     - redis
+    ports:
+      - 8080:8080 # HTTP Server Port
+      - 5006:5005 # Debug Port
+    volumes:
+      - ${DRIVER_SERVICE:-../driver-service}:/workspace:Z,delegated
+      - ~/.m2:/root/.m2:z,delegated
+    working_dir: /workspace
+    environment:
+      DIRECTIONS_API_KEY: ${DIRECTIONS_API_KEY}
+      BOOTSTRAP_SERVERS: kafka:9092
+      REDIS_SERVER: redis:6379
+      DELIVERY_SERVICE_HOST: http://delivery-service:9098
+
+  web:
+    image: node:13.12.0-alpine
+    command: [
+      "sh", "-c",
+      "sed -i /^REACT_APP_DIRECTIONS_KEY/s/=.*$$/=${DIRECTIONS_API_KEY}/ .env && npm update && npm install && node node_modules/node-sass/scripts/install.js && npm rebuild node-sass && npm start"
+    ]
+    volumes:
+      - ${COURIE_WEB:-../courie-web}:/workspace:Z,delegated
+    working_dir: /workspace
+    ports:
+      - "3000:3000"
+    environment:
+      API_KEY: ${DIRECTIONS_API_KEY}
+
+  driver-web:
+    image: node:13.12.0-alpine
+    command: [
+      "sh", "-c",
+      "sed -i /^REACT_APP_DIRECTIONS_KEY/s/=.*$$/=${DIRECTIONS_API_KEY}/ .env && npm update && npm install && node node_modules/node-sass/scripts/install.js && npm rebuild node-sass && npm start"
+    ]
+    volumes:
+      - ${COURIE_DRIVER_WEB:-../courie-driver-web}:/workspace:Z,delegated
+    working_dir: /workspace
+    ports:
+      - "3001:3000"
+    environment:
+      API_KEY: ${DIRECTIONS_API_KEY}
